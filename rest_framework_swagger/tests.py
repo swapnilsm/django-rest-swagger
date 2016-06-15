@@ -2777,7 +2777,8 @@ class TestAdvancedDecoratorIntrospection(TestCase, DocumentationGeneratorMixin):
         return wrapper
 
 
-if platform.python_version_tuple()[:2] != ('3', '2'):
+# TODO: make these PY3 compat
+if platform.python_version_tuple()[0] != '3':
     class Swagger1_2Tests(TestCase):
         """
         build some swagger endpoints, and run swagger's JSON schema on the results.
