@@ -116,15 +116,15 @@ TEMPLATE_DIRS = (
     # Always use forward slashes, even on Windows.
     # Don't forget to use absolute paths, not relative paths.
 )
-TEST_RUNNER = 'django_nose.NoseTestSuiteRunner'
+#TEST_RUNNER = 'django_nose.NoseTestSuiteRunner'
 SOUTH_TESTS_MIGRATE = False
-NOSE_ARGS = [
-    '--nocapture',
-    '--nologcapture',
-    '--with-coverage',
-    '--cover-package=rest_framework_swagger',
-    'cigar_example',
-]
+#NOSE_ARGS = [
+#    '--nocapture',
+#    '--nologcapture',
+#    '--with-coverage',
+#    '--cover-package=rest_framework_swagger',
+#    'cigar_example',
+#]
 
 INSTALLED_APPS = (
     'django.contrib.auth',
@@ -133,7 +133,7 @@ INSTALLED_APPS = (
     'django.contrib.sites',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'django_nose',
+#    'django_nose',
     'cigar_example.app',
     'cigar_example.restapi',
     'rest_framework',
