@@ -325,6 +325,8 @@ class BaseMethodIntrospector(object):
 
             if not form_params and body_params is not None:
                 params.append(body_params)
+        else:
+            params += self.build_serializer_parameters('query')
 
         if query_params:
             params += query_params
@@ -379,6 +381,80 @@ class BaseMethodIntrospector(object):
 
         return params
 
+    def build_serializer_parameters(self, param_type):
+        """
+        Builds parameters from the serializer class
+        """
+        params = []
+        serializer_class = self.get_request_serializer_class()
+
+        if serializer_class is None:
+            return params
+
+        serializer = serializer_class()
+        fields = serializer.get_fields()
+        read_only_fields = getattr(getattr(serializer, 'Meta', None), 'read_only_fields', [])
+
+        for name, field in fields.items():
+
+            if getattr(field, 'read_only', False) or name in read_only_fields:
+                continue
+
+            data_type, data_format = get_data_type(field) or ('string', 'string')
+            if data_type == 'hidden':
+                continue
+
+            # guess format
+            # data_format = 'string'
+            # if data_type in self.PRIMITIVES:
+                # data_format = self.PRIMITIVES.get(data_type)[0]
+
+            choices = []
+            if data_type in BaseMethodIntrospector.ENUMS:
+                if isinstance(field.choices, list):
+                    choices = [k for k, v in field.choices]
+                elif isinstance(field.choices, dict):
+                    choices = [k for k, v in field.choices.items()]
+
+            if choices:
+                # guest data type and format
+                data_type, data_format = get_primitive_type(choices[0]) or ('string', 'string')
+
+            f = {
+                'paramType': param_type,
+                'name': name,
+                'description': getattr(field, 'help_text', '') or '',
+                'type': data_type,
+                'format': data_format,
+                'required': getattr(field, 'required', False),
+                'defaultValue': get_default_value(field),
+            }
+
+            # Swagger type is a primitive, format is more specific
+            if f['type'] == f['format']:
+                del f['format']
+
+            # defaultValue of null is not allowed, it is specific to type
+            if f['defaultValue'] is None:
+                del f['defaultValue']
+
+            # Min/Max values
+            max_value = getattr(field, 'max_value', None)
+            min_value = getattr(field, 'min_value', None)
+            if max_value is not None and data_type == 'integer':
+                f['minimum'] = min_value
+
+            if max_value is not None and data_type == 'integer':
+                f['maximum'] = max_value
+
+            # ENUM options
+            if choices:
+                f['enum'] = choices
+
+            params.append(f)
+
+        return params
+
     def build_query_parameters(self):
         params = []
 
@@ -429,76 +505,7 @@ class BaseMethodIntrospector(object):
         """
         Builds form parameters from the serializer class
         """
-        data = []
-        serializer_class = self.get_request_serializer_class()
-
-        if serializer_class is None:
-            return data
-
-        serializer = serializer_class()
-        fields = serializer.get_fields()
-        read_only_fields = getattr(getattr(serializer, 'Meta', None), 'read_only_fields', [])
-
-        for name, field in fields.items():
-
-            if getattr(field, 'read_only', False) or name in read_only_fields:
-                continue
-
-            data_type, data_format = get_data_type(field) or ('string', 'string')
-            if data_type == 'hidden':
-                continue
-
-            # guess format
-            # data_format = 'string'
-            # if data_type in self.PRIMITIVES:
-                # data_format = self.PRIMITIVES.get(data_type)[0]
-
-            choices = []
-            if data_type in BaseMethodIntrospector.ENUMS:
-                if isinstance(field.choices, list):
-                    choices = [k for k, v in field.choices]
-                elif isinstance(field.choices, dict):
-                    choices = [k for k, v in field.choices.items()]
-
-            if choices:
-                # guest data type and format
-                data_type, data_format = get_primitive_type(choices[0]) or ('string', 'string')
-
-            f = {
-                'paramType': 'form',
-                'name': name,
-                'description': getattr(field, 'help_text', '') or '',
-                'type': data_type,
-                'format': data_format,
-                'required': getattr(field, 'required', False),
-                'defaultValue': get_default_value(field),
-            }
-
-            # Swagger type is a primitive, format is more specific
-            if f['type'] == f['format']:
-                del f['format']
-
-            # defaultValue of null is not allowed, it is specific to type
-            if f['defaultValue'] is None:
-                del f['defaultValue']
-
-            # Min/Max values
-            max_value = getattr(field, 'max_value', None)
-            min_value = getattr(field, 'min_value', None)
-            if max_value is not None and data_type == 'integer':
-                f['minimum'] = min_value
-
-            if max_value is not None and data_type == 'integer':
-                f['maximum'] = max_value
-
-            # ENUM options
-            if choices:
-                f['enum'] = choices
-
-            data.append(f)
-
-        return data
-
+        return self.build_serializer_parameters('form')
 
 def get_primitive_type(var):
     if isinstance(var, bool):

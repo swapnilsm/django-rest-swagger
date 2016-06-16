@@ -1730,9 +1730,9 @@ class YAMLDocstringParserTests(TestCase, DocumentationGeneratorMixin):
         class SerializedAPI(ListCreateAPIView):
             serializer_class = CommentSerializer
 
-            def get(self, request, *args, **kwargs):
+            def post(self, request, *args, **kwargs):
                 """
-                My list view with custom query parameters
+                My create view with custom query parameters
 
                 ---
                 parameters_strategy:
@@ -1750,7 +1750,7 @@ class YAMLDocstringParserTests(TestCase, DocumentationGeneratorMixin):
                     request, *args, **kwargs)
 
         class_introspector = self.make_introspector(SerializedAPI)
-        introspector = APIViewMethodIntrospector(class_introspector, 'GET')
+        introspector = APIViewMethodIntrospector(class_introspector, 'POST')
         parser = introspector.get_yaml_parser()
         params = introspector.build_form_parameters()
         self.assertEqual(len(CommentSerializer().get_fields()), len(params))
