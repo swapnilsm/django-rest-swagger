@@ -507,6 +507,7 @@ class BaseMethodIntrospector(object):
         """
         return self.build_serializer_parameters('form')
 
+
 def get_primitive_type(var):
     if isinstance(var, bool):
         return 'boolean', 'boolean'
